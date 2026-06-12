@@ -38,7 +38,7 @@ Fork Graph runs entirely on your machine. It **reads** your local session files 
 
 ## How it works (short version)
 
-Claude Code rewrites `sessionId`/`uuid` when a conversation is forked, so files can't be joined by IDs. Fork Graph canonicalizes records by `timestamp + type + content fingerprint` (with a secondary merge by stable prompt/request IDs for the one record that forking re-stamps), which reconstructs the cross-file fork DAG regardless of read order. Details live in the [design docs](https://github.com/your-account/fork-graph/tree/main/docs).
+Claude Code rewrites `sessionId`/`uuid` when a conversation is forked, so files can't be joined by IDs. Fork Graph canonicalizes records by `timestamp + type + content fingerprint` (with a secondary merge by stable prompt/request IDs for the one record that forking re-stamps), which reconstructs the cross-file fork DAG regardless of read order. Details live in the [design docs](https://github.com/haraharagomadohu-web/fork-graph/tree/main/docs).
 
 ## License
 

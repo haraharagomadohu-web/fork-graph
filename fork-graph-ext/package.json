@@ -5,6 +5,15 @@
   "version": "0.0.1",
   "publisher": "fork-graph-dev",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/haraharagomadohu-web/fork-graph.git",
+    "directory": "fork-graph-ext"
+  },
+  "bugs": {
+    "url": "https://github.com/haraharagomadohu-web/fork-graph/issues"
+  },
+  "homepage": "https://github.com/haraharagomadohu-web/fork-graph",
   "engines": {
     "vscode": "^1.94.0"
   },
@@ -48,7 +57,9 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "vscode:prepublish": "npm run compile",
-    "redeploy": "npm run compile && vsce package --allow-missing-repository && code --install-extension fork-graph-0.0.1.vsix"
+    "redeploy": "npm run compile && vsce package && code --install-extension fork-graph-0.0.1.vsix",
+    "package": "vsce package --baseContentUrl https://github.com/haraharagomadohu-web/fork-graph/blob/HEAD/fork-graph-ext/ --baseImagesUrl https://github.com/haraharagomadohu-web/fork-graph/raw/HEAD/fork-graph-ext/",
+    "publish": "vsce publish --baseContentUrl https://github.com/haraharagomadohu-web/fork-graph/blob/HEAD/fork-graph-ext/ --baseImagesUrl https://github.com/haraharagomadohu-web/fork-graph/raw/HEAD/fork-graph-ext/"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
