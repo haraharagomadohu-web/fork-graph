@@ -4,8 +4,7 @@
 
 A VS Code extension that reads your local Claude Code session history (`~/.claude/projects/`), reconstructs the full fork genealogy across `/rewind`, *Fork conversation from here*, `--fork-session` and resumed sessions, and lets you annotate, search, and reopen any point in it.
 
-<!-- TODO: hero GIF / annotated screenshot -->
-<!-- ![Fork Graph in action](docs/images/hero.gif) -->
+![Fork Graph in action](fork-graph-ext/images/hero.gif)
 
 ## Why
 
@@ -21,6 +20,17 @@ Claude Code conversations branch constantly, and the judgment "this branch felt 
 - ≈ **/compact markers**, auto reload, deleted-session detection, 4 languages
 
 Full feature list: [docs/FEATURES.md](docs/FEATURES.md) (Japanese)
+
+## UI at a glance
+
+![Fork Graph UI overview](fork-graph-ext/images/overview.gif)
+
+1. **Launch icon** in the editor title bar — or run **Fork Graph: Open** from the Command Palette
+2. **The fork graph** — every prompt is a node; each lane is a branch born from a rewind or fork
+3. **Detail panel** — full prompt, timestamp, memo & pin, soft delete, and *Open in Claude Code*
+4. **Text search** across prompts and memos — non-matching nodes dim, so the genealogy stays visible
+5. **Calendar search** — filter by date and time range (days that have chats are marked)
+6. **Menu** — project folder switcher, language, pinned-only filter, restore soft-deleted branches
 
 ## Install / Use
 

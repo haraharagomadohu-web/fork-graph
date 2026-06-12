@@ -4,8 +4,7 @@
 
 Claude Code sessions branch constantly: `/rewind`, *Fork conversation from here*, `--fork-session`, resumed chats. After a week you have dozens of sessions and no way to remember which branch had the good result. Fork Graph reads your local session history, reconstructs the full fork genealogy, and lets you annotate, search, and reopen any point in it.
 
-<!-- TODO: hero GIF (images/hero.gif) — graph, click node, memo, Open in Claude Code.
-     Requires the repository field in package.json before vsce can rewrite relative URLs. -->
+![Fork Graph in action](images/hero.gif)
 
 ## Features
 
@@ -20,6 +19,17 @@ Claude Code sessions branch constantly: `/rewind`, *Fork conversation from here*
 - **Auto reload** — the graph follows your conversations live as session files grow
 - **Deleted-session awareness** — sessions hidden in the official UI show as dashed pills and can still be opened via CLI
 - **4 languages** — English (default), 日本語, 中文, 한국어
+
+## UI at a glance
+
+![Fork Graph UI overview](images/overview.gif)
+
+1. **Launch icon** in the editor title bar — or run **Fork Graph: Open** from the Command Palette
+2. **The fork graph** — every prompt is a node; each lane is a branch born from a rewind or fork
+3. **Detail panel** — full prompt, timestamp, memo & pin, soft delete, and *Open in Claude Code*
+4. **Text search** across prompts and memos — non-matching nodes dim, so the genealogy stays visible
+5. **Calendar search** — filter by date and time range (days that have chats are marked)
+6. **Menu** — project folder switcher, language, pinned-only filter, restore soft-deleted branches
 
 ## Getting started
 
