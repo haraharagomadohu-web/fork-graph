@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Fork Graph — Prototype (Full)</title>
+<style>
+  :root {
+    --bg: #1e1e1e;
+    --bg-panel: #252526;
+    --fg: #d4d4d4;
+    --fg-dim: #858585;
+    --border: #3c3c3c;
+    --accent: #d97757;
+    --lane-0: #4ec9b0;
+    --lane-1: #c586c0;
+    --lane-2: #ce9178;
+    --lane-3: #569cd6;
+    --lane-4: #dcdcaa;
+    --lane-5: #4fc1ff;
+    --lane-6: #f48771;
+    --lane-7: #b5cea8;
+    --lane-8: #d7ba7d;
+    --lane-9: #6796e6;
+    --lane-10: #b267e6;
+    --lane-11: #e672a6;
+    --lane-12: #ff8c00;
+    --lane-13: #00ced1;
+    --lane-14: #a8c5e0;
+    --lane-15: #c9b8a0;
+    --lane-16: #9fb89e;
+    --lane-17: #d4a4ce;
+    --pin: #ffd700;
+    --memo: #4ec9b0;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Yu Gothic UI", sans-serif; font-size: 13px; }
+
+  /* Header */
+  header { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; position: relative; }
+  header h1 { margin: 0; font-size: 16px; font-weight: 600; }
+  header small { color: var(--fg-dim); font-weight: 400; font-size: 11px; }
+  header .meta { color: var(--fg-dim); font-size: 12px; }
+  header .spacer { flex: 1; }
+  #menu-btn { background: transparent; color: var(--fg); border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 14px; }
+  #menu-btn:hover { background: var(--bg-panel); }
+  #menu-btn.active { background: var(--bg-panel); border-color: var(--accent); }
+
+  /* Menu panel */
+  #menu-panel { position: absolute; top: 49px; right: 20px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; display: none; z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.4); min-width: 240px; }
+  #menu-panel.open { display: block; }
+  #menu-panel h3 { margin: 0 0 10px; font-size: 11px; font-weight: 600; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  #menu-panel label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--fg); }
+  #menu-panel .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  #menu-panel .value { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+  #menu-panel input[type=range] { width: 100%; accent-color: var(--accent); }
+
+  main { display: grid; grid-template-columns: 1fr 360px; height: calc(100vh - 49px); transition: grid-template-columns 0.2s; }
+  main.no-detail { grid-template-columns: 1fr 0; }
+  main.no-detail aside { display: none; }
+  #graph { overflow: auto; padding: 16px 0; }
+  #graph svg { display: block; transition: width 0.2s; }
+
+  /* Aside (detail panel) */
+  aside { background: var(--bg-panel); border-left: 1px solid var(--border); padding: 16px 18px; overflow-y: auto; position: relative; }
+  aside h2 { margin: 0 0 12px; font-size: 13px; font-weight: 600; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.5px; padding-right: 28px; }
+  aside h3 { margin: 18px 0 6px; font-size: 12px; font-weight: 600; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  aside .prompt-full { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; line-height: 1.6; white-space: pre-wrap; }
+  aside .memo { background: var(--bg); border: 1px solid var(--border); border-left: 3px solid var(--memo); border-radius: 4px; padding: 10px 12px; line-height: 1.5; color: var(--fg); min-height: 40px; white-space: pre-wrap; }
+  aside .memo.empty { color: var(--fg-dim); font-style: italic; }
+  aside .badges { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  aside .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); color: var(--fg-dim); }
+  aside .badge.pinned { color: var(--pin); border-color: var(--pin); }
+  aside .badge.pin-toggle { cursor: pointer; user-select: none; transition: opacity 0.15s, color 0.15s, border-color 0.15s; }
+  aside .badge.pin-toggle.on { color: var(--pin); border-color: var(--pin); opacity: 1; }
+  aside .badge.pin-toggle.off { color: var(--fg-dim); border-color: var(--border); opacity: 0.5; }
+  aside .badge.pin-toggle:hover { filter: brightness(1.2); opacity: 1; }
+  aside .open-btn { margin-top: 16px; width: 100%; padding: 10px; background: var(--accent); color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500; }
+  aside .open-btn:hover { filter: brightness(1.1); }
+  aside .empty-state { color: var(--fg-dim); font-style: italic; padding: 40px 0; text-align: center; }
+  aside .close-btn {
+    position: absolute; top: 12px; right: 12px;
+    width: 24px; height: 24px;
+    background: transparent; border: none;
+    color: var(--fg-dim); cursor: pointer;
+    font-size: 18px; line-height: 1; padding: 0; margin: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 4px;
+  }
+  aside .close-btn:hover { color: var(--fg); background: var(--bg); }
+
+  /* SVG */
+  .edge { fill: none; stroke-width: 2; opacity: 0.7; }
+  .edge-stub { fill: none; stroke-width: 2; opacity: 0.5; stroke-dasharray: 3 3; }
+  .node { cursor: pointer; }
+  .node-pill { transition: stroke-width 0.15s; }
+  .node-label { font-size: 13px; font-family: ui-monospace, "SF Mono", "Yu Gothic UI", monospace;
+    pointer-events: none; user-select: none; }
+  .node:hover .node-pill { stroke-width: 2.5; filter: brightness(1.3); }
+  .node.selected .node-pill { stroke: #fff; stroke-width: 2.5; }
+  .node.selected .node-label { fill: #fff; }
+  .node.collapsed-self { opacity: 0.35; }
+  .badge-icon { font-size: 11px; user-select: none; pointer-events: none; }
+  .toggle-icon { font-size: 11px; user-select: none; pointer-events: all; cursor: pointer; opacity: 0.85; }
+  .toggle-icon:hover { opacity: 1; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Fork Graph <small>full prototype</small></h1>
+  <span id="meta" class="meta"></span>
+  <div class="spacer"></div>
+  <button id="menu-btn" title="Settings">☰</button>
+</header>
+
+<div id="menu-panel">
+  <h3>Display Settings</h3>
+  <label>
+    <div class="row">
+      <span>Preview chars</span>
+      <span class="value"><span id="chars-display">4</span> / 10</span>
+    </div>
+    <input type="range" id="chars-slider" min="0" max="10" step="1" value="4">
+  </label>
+</div>
+
+<main class="no-detail">
+  <section id="graph"></section>
+  <aside id="detail"></aside>
+</main>
+
+<script src="sample-fork-graph.js"></script>
+
+<script>
+const SVGNS = 'http://www.w3.org/2000/svg';
+const nodes = window.SAMPLE_NODES;
+
+const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+nodes.forEach(n => { n.row = n.parent ? byId[n.parent].row + 1 : 0; });
+
+/* 親→子 逆引き */
+const childrenOf = new Map();
+nodes.forEach(n => {
+  if (!n.parent) return;
+  if (!childrenOf.has(n.parent)) childrenOf.set(n.parent, []);
+  childrenOf.get(n.parent).push(n);
+});
+
+/* メタ表示 */
+const numForks = new Set(nodes.filter(n => n.parent && byId[n.parent].lane !== n.lane).map(n => n.lane)).size;
+document.getElementById('meta').innerHTML =
+  `Project: <strong>my-react-app</strong> · ${nodes.length} sessions, ${numForks} forks`;
+
+/* ============================================================
+   レイアウト定数
+   ============================================================ */
+const PILL_H = 24;
+const ROW_H  = 56;
+const MARGIN_X = 50;
+const MARGIN_Y = 30;
+const STUB_LEN = 22;
+const CHAR_W = 10.5;     // monospace 1文字あたり概算幅
+const PILL_PADDING = 14; // ピル両端の余白
+const PILL_MIN_W = 28;   // 0文字時の最小幅
+const LANE_GAP = 24;     // ピル間の余白(=LANE_W - pillW)
+
+/* ============================================================
+   設定状態
+   ============================================================ */
+let previewChars = 4;
+let pillW = computePillW();
+let laneW = computeLaneW();
+
+function computePillW() {
+  return Math.max(PILL_MIN_W, previewChars * CHAR_W + PILL_PADDING);
+}
+function computeLaneW() {
+  return pillW + LANE_GAP;
+}
+
+const maxRow = Math.max(...nodes.map(n => n.row));
+const svgH = MARGIN_Y * 2 + maxRow * ROW_H + 20;
+
+function laneColor(lane) {
+  return getComputedStyle(document.documentElement).getPropertyValue(`--lane-${lane}`).trim() || '#888';
+}
+
+function showToggle(n) {
+  if ((childrenOf.get(n.id) || []).length >= 2) return true;
+  if (n.parent && (childrenOf.get(n.parent) || []).length >= 2) return true;
+  return false;
+}
+
+/* ============================================================
+   状態管理
+   ============================================================ */
+const collapsed = new Set();
+let currentSelectedId = null;
+
+function isAncestorCollapsed(n) {
+  let pid = n.parent;
+  while (pid) {
+    if (collapsed.has(pid)) return true;
+    pid = byId[pid].parent;
+  }
+  return false;
+}
+
+/* レーン圧縮 */
+let laneMap = new Map();
+let currentSvgW = 0;
+
+function recomputeLayout() {
+  pillW = computePillW();
+  laneW = computeLaneW();
+  const visible = nodes.filter(n => !isAncestorCollapsed(n));
+  const used = Array.from(new Set(visible.map(n => n.lane))).sort((a, b) => a - b);
+  laneMap = new Map(used.map((lane, idx) => [lane, idx]));
+  const compressedCount = used.length;
+  currentSvgW = MARGIN_X + Math.max(0, compressedCount - 1) * laneW + 100;
+}
+
+function pos(n) {
+  const mapped = laneMap.get(n.lane) ?? 0;
+  return { x: MARGIN_X + mapped * laneW, y: MARGIN_Y + n.row * ROW_H };
+}
+
+/* SVG */
+const svg = document.createElementNS(SVGNS, 'svg');
+svg.setAttribute('height', svgH);
+document.getElementById('graph').appendChild(svg);
+
+/* ============================================================
+   描画
+   ============================================================ */
+function render() {
+  recomputeLayout();
+  svg.setAttribute('width', currentSvgW);
+
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  /* レーン縦線 */
+  for (const [origLane, idx] of laneMap.entries()) {
+    const line = document.createElementNS(SVGNS, 'line');
+    const x = MARGIN_X + idx * laneW;
+    line.setAttribute('x1', x);
+    line.setAttribute('x2', x);
+    line.setAttribute('y1', MARGIN_Y - 10);
+    line.setAttribute('y2', svgH - MARGIN_Y / 2);
+    line.setAttribute('stroke', laneColor(origLane));
+    line.setAttribute('stroke-width', 1);
+    line.setAttribute('opacity', 0.12);
+    svg.appendChild(line);
+  }
+
+  /* エッジ */
+  const HALF_H = PILL_H / 2;
+  nodes.filter(n => n.parent).forEach(n => {
+    const p = byId[n.parent];
+    if (collapsed.has(p.id)) return;
+    if (isAncestorCollapsed(p)) return;
+
+    const cp = pos(p), cc = pos(n);
+    const py = cp.y + HALF_H;
+    const cy = cc.y - HALF_H;
+    const path = document.createElementNS(SVGNS, 'path');
+    let d;
+    if (cp.x === cc.x) {
+      d = `M ${cp.x} ${py} L ${cc.x} ${cy}`;
+    } else {
+      const elbowY = py + (cy - py) * 0.5;
+      d = `M ${cp.x} ${py}
+           L ${cp.x} ${elbowY - 10}
+           Q ${cp.x} ${elbowY}, ${cp.x + (cc.x - cp.x) * 0.3} ${elbowY}
+           L ${cc.x} ${elbowY}
+           L ${cc.x} ${cy}`;
+    }
+    path.setAttribute('d', d);
+    path.setAttribute('class', 'edge');
+    path.setAttribute('stroke', laneColor(n.lane));
+    svg.appendChild(path);
+  });
+
+  /* ノード */
+  nodes.forEach(n => {
+    if (isAncestorCollapsed(n)) return;
+
+    const isSelf = collapsed.has(n.id);
+    const { x, y } = pos(n);
+    const g = document.createElementNS(SVGNS, 'g');
+    g.setAttribute('class', 'node' + (isSelf ? ' collapsed-self' : '') + (n.id === currentSelectedId ? ' selected' : ''));
+    g.setAttribute('data-id', n.id);
+    g.setAttribute('transform', `translate(${x}, ${y})`);
+
+    const color = laneColor(n.lane);
+    const preview = previewChars === 0 ? '' : n.prompt.slice(0, previewChars);
+
+    const rect = document.createElementNS(SVGNS, 'rect');
+    rect.setAttribute('class', 'node-pill');
+    rect.setAttribute('x', -pillW / 2);
+    rect.setAttribute('y', -PILL_H / 2);
+    rect.setAttribute('width', pillW);
+    rect.setAttribute('height', PILL_H);
+    rect.setAttribute('rx', PILL_H / 2);
+    rect.setAttribute('fill', 'var(--bg)');
+    rect.setAttribute('stroke', color);
+    rect.setAttribute('stroke-width', 1.5);
+    g.appendChild(rect);
+
+    if (preview) {
+      const text = document.createElementNS(SVGNS, 'text');
+      text.setAttribute('class', 'node-label');
+      text.setAttribute('x', 0);
+      text.setAttribute('y', 4);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('fill', color);
+      text.textContent = preview;
+      g.appendChild(text);
+    }
+
+    /* ★ ピン留め */
+    if (n.pinned) {
+      const pin = document.createElementNS(SVGNS, 'text');
+      pin.setAttribute('class', 'badge-icon');
+      pin.setAttribute('x', -8);
+      pin.setAttribute('y', -PILL_H / 2 - 3);
+      pin.setAttribute('text-anchor', 'end');
+      pin.setAttribute('fill', color);
+      pin.textContent = '★';
+      g.appendChild(pin);
+    }
+
+    /* ▼/▶ トグル */
+    if (showToggle(n)) {
+      const toggle = document.createElementNS(SVGNS, 'text');
+      toggle.setAttribute('class', 'toggle-icon');
+      toggle.setAttribute('x', 8);
+      toggle.setAttribute('y', -PILL_H / 2 - 3);
+      toggle.setAttribute('text-anchor', 'start');
+      toggle.setAttribute('fill', color);
+      toggle.textContent = isSelf ? '▶' : '▼';
+      toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleCollapse(n.id);
+      });
+      g.appendChild(toggle);
+    }
+
+    g.addEventListener('click', () => select(n.id));
+    svg.appendChild(g);
+
+    /* 折りたたみスタブ */
+    if (isSelf) {
+      const stub = document.createElementNS(SVGNS, 'path');
+      stub.setAttribute('d', `M ${x} ${y + HALF_H} L ${x} ${y + HALF_H + STUB_LEN}`);
+      stub.setAttribute('class', 'edge-stub');
+      stub.setAttribute('stroke', color);
+      svg.appendChild(stub);
+    }
+  });
+}
+
+function toggleCollapse(id) {
+  if (collapsed.has(id)) collapsed.delete(id);
+  else collapsed.add(id);
+  render();
+}
+
+/* ============================================================
+   詳細パネル(右)
+   ============================================================ */
+function deselect() {
+  currentSelectedId = null;
+  document.querySelectorAll('.node.selected').forEach(el => el.classList.remove('selected'));
+  document.getElementById('detail').innerHTML = '';
+  document.querySelector('main').classList.add('no-detail');
+}
+
+function select(id) {
+  currentSelectedId = id;
+  document.querySelector('main').classList.remove('no-detail');
+  document.querySelectorAll('.node').forEach(el => el.classList.toggle('selected', el.dataset.id === id));
+
+  const n = byId[id];
+  const badges = [
+    `<span class="badge" style="color:${laneColor(n.lane)};border-color:${laneColor(n.lane)}">lane-${n.lane}</span>`,
+    `<span class="badge pin-toggle ${n.pinned ? 'on' : 'off'}" title="クリックでピン留めを切り替え">★ ${n.pinned ? 'pinned' : 'not pinned'}</span>`,
+    n.memo ? `<span class="badge" style="color:var(--memo);border-color:var(--memo)">memo</span>` : '',
+    collapsed.has(id) ? `<span class="badge" style="color:var(--fg-dim);border-color:var(--fg-dim)">▶ collapsed</span>` : '',
+  ].filter(Boolean).join('');
+
+  document.getElementById('detail').innerHTML = `
+    <button class="close-btn" title="閉じる">×</button>
+    <h2>Selected Session</h2>
+    <div class="badges">${badges}</div>
+    <h3>Prompt</h3>
+    <div class="prompt-full">${escapeHtml(n.prompt)}</div>
+    <h3>メモ</h3>
+    <div class="memo ${n.memo ? '' : 'empty'}">${n.memo ? escapeHtml(n.memo) : '(まだメモなし)'}</div>
+    <button class="open-btn" onclick="alert('🎬 Claude Code for VS Code 拡張を起動します\\n→ session: ${n.id}\\n\\n(プロトタイプなのでモック動作)')">
+      ▶ Open in Claude Code
+    </button>
+  `;
+  document.querySelector('aside .close-btn').addEventListener('click', deselect);
+  document.querySelector('aside .pin-toggle').addEventListener('click', () => {
+    n.pinned = !n.pinned;
+    render();
+    select(id);
+  });
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ============================================================
+   メニュー
+   ============================================================ */
+const menuBtn = document.getElementById('menu-btn');
+const menuPanel = document.getElementById('menu-panel');
+const charsSlider = document.getElementById('chars-slider');
+const charsDisplay = document.getElementById('chars-display');
+
+menuBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const open = menuPanel.classList.toggle('open');
+  menuBtn.classList.toggle('active', open);
+});
+
+/* 外側クリックでメニューを閉じる */
+document.addEventListener('click', (e) => {
+  if (!menuPanel.contains(e.target) && e.target !== menuBtn) {
+    menuPanel.classList.remove('open');
+    menuBtn.classList.remove('active');
+  }
+});
+
+charsSlider.addEventListener('input', (e) => {
+  previewChars = parseInt(e.target.value, 10);
+  charsDisplay.textContent = previewChars;
+  render();
+});
+
+render();
+</script>
+
+</body>
+</html>

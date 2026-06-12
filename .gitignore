@@ -1,0 +1,12 @@
+# 公式 Claude Code 拡張の出荷物の複製（参考専用・再配布禁止のため公開リポジトリに含めない。
+# 入手方法は reference-claude-code/README.md を参照）
+reference-claude-code/source/
+
+# Build artifacts
+node_modules/
+out/
+*.vsix
+
+# OS / editor
+.DS_Store
+Thumbs.db

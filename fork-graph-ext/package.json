@@ -1,0 +1,58 @@
+{
+  "name": "fork-graph",
+  "displayName": "Fork Graph",
+  "description": "Visualize Claude Code session fork genealogy as a git-graph. Leave memos on nodes and reopen \"that good state\" in one click.",
+  "version": "0.0.1",
+  "publisher": "fork-graph-dev",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.94.0"
+  },
+  "categories": [
+    "Visualization",
+    "AI"
+  ],
+  "keywords": [
+    "claude",
+    "claude-code",
+    "session",
+    "fork",
+    "history",
+    "graph",
+    "visualization"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onWebviewPanel:forkGraphPanel",
+    "onWebviewPanel:forkGraphPreview"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "fork-graph.open",
+        "title": "Fork Graph: Open",
+        "icon": "resources/fork-graph.svg"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "fork-graph.open",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile",
+    "redeploy": "npm run compile && vsce package --allow-missing-repository && code --install-extension fork-graph-0.0.1.vsix"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.94.0",
+    "@vscode/vsce": "^3.9.2",
+    "typescript": "^5.5.0"
+  }
+}

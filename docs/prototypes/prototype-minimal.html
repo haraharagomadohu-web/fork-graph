@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Fork Graph — Minimal Prototype</title>
+<style>
+  :root {
+    --bg: #1e1e1e;
+    --fg: #d4d4d4;
+    --fg-dim: #858585;
+    --border: #3c3c3c;
+    --lane-0: #4ec9b0;
+    --lane-1: #c586c0;
+    --lane-2: #ce9178;
+    --lane-3: #569cd6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Yu Gothic UI", sans-serif; font-size: 13px; }
+  header { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 16px; }
+  header h1 { margin: 0; font-size: 16px; font-weight: 600; }
+  header small { color: var(--fg-dim); font-weight: 400; font-size: 11px; }
+  #graph { overflow: auto; padding: 16px 0; height: calc(100vh - 49px); }
+  #graph svg { display: block; }
+  .edge { fill: none; stroke-width: 2; opacity: 0.7; }
+  .node-pill { stroke-width: 1.5; }
+  .node-label { font-size: 13px; font-family: ui-monospace, "SF Mono", "Yu Gothic UI", monospace; user-select: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Fork Graph <small>minimal prototype</small></h1>
+</header>
+
+<section id="graph"></section>
+
+<script>
+const SVGNS = 'http://www.w3.org/2000/svg';
+
+/* データ: 4文字ピル + エッジ を描くために必要な最小フィールドのみ */
+const nodes = [
+  { id: 'n1', parent: null, lane: 0, prompt: 'Reactの状態管理について相談したい' },
+  { id: 'n2', parent: 'n1', lane: 0, prompt: 'Reduxの基本パターン教えて' },
+  { id: 'n3', parent: 'n2', lane: 0, prompt: 'やっぱりReduxは重い気がする' },
+  { id: 'n4', parent: 'n2', lane: 1, prompt: 'RTKに移行する手順をステップで' },
+  { id: 'n5', parent: 'n4', lane: 1, prompt: 'createAsyncThunkのパターンを実装' },
+  { id: 'n6', parent: 'n3', lane: 0, prompt: 'Context APIで十分かも' },
+  { id: 'n7', parent: 'n3', lane: 2, prompt: 'Zustandと比較したい' },
+  { id: 'n8', parent: 'n7', lane: 2, prompt: 'persist middlewareの使い方' },
+  { id: 'n9', parent: 'n6', lane: 0, prompt: 'useReducer + Context で書き直し' },
+];
+
+const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+nodes.forEach(n => { n.row = n.parent ? byId[n.parent].row + 1 : 0; });
+
+const PILL_W = 56, PILL_H = 24;
+const LANE_W = 80, ROW_H = 56;
+const MARGIN_X = 50, MARGIN_Y = 30;
+
+const numLanes = Math.max(...nodes.map(n => n.lane)) + 1;
+const maxRow = Math.max(...nodes.map(n => n.row));
+const svgW = MARGIN_X + (numLanes - 1) * LANE_W + 100;
+const svgH = MARGIN_Y * 2 + maxRow * ROW_H + 20;
+
+function pos(n) { return { x: MARGIN_X + n.lane * LANE_W, y: MARGIN_Y + n.row * ROW_H }; }
+function laneColor(lane) {
+  return getComputedStyle(document.documentElement).getPropertyValue(`--lane-${lane}`).trim() || '#888';
+}
+
+const svg = document.createElementNS(SVGNS, 'svg');
+svg.setAttribute('width', svgW);
+svg.setAttribute('height', svgH);
+
+/* レーン縦線(うっすら) */
+for (let l = 0; l < numLanes; l++) {
+  const line = document.createElementNS(SVGNS, 'line');
+  const x = MARGIN_X + l * LANE_W;
+  line.setAttribute('x1', x); line.setAttribute('x2', x);
+  line.setAttribute('y1', MARGIN_Y - 10); line.setAttribute('y2', svgH - MARGIN_Y / 2);
+  line.setAttribute('stroke', laneColor(l));
+  line.setAttribute('stroke-width', 1);
+  line.setAttribute('opacity', 0.12);
+  svg.appendChild(line);
+}
+
+/* エッジ(親ピル下端 → 子ピル上端) */
+const HALF_H = PILL_H / 2;
+nodes.filter(n => n.parent).forEach(n => {
+  const p = byId[n.parent], cp = pos(p), cc = pos(n);
+  const py = cp.y + HALF_H;
+  const cy = cc.y - HALF_H;
+  const path = document.createElementNS(SVGNS, 'path');
+  let d;
+  if (p.lane === n.lane) {
+    d = `M ${cp.x} ${py} L ${cc.x} ${cy}`;
+  } else {
+    const elbowY = py + (cy - py) * 0.5;
+    d = `M ${cp.x} ${py}
+         L ${cp.x} ${elbowY - 10}
+         Q ${cp.x} ${elbowY}, ${cp.x + (cc.x - cp.x) * 0.3} ${elbowY}
+         L ${cc.x} ${elbowY}
+         L ${cc.x} ${cy}`;
+  }
+  path.setAttribute('d', d);
+  path.setAttribute('class', 'edge');
+  path.setAttribute('stroke', laneColor(n.lane));
+  svg.appendChild(path);
+});
+
+/* ノード = 4文字ピル */
+nodes.forEach(n => {
+  const { x, y } = pos(n);
+  const g = document.createElementNS(SVGNS, 'g');
+  g.setAttribute('transform', `translate(${x}, ${y})`);
+  const color = laneColor(n.lane);
+  const preview = n.prompt.slice(0, 4);
+
+  const rect = document.createElementNS(SVGNS, 'rect');
+  rect.setAttribute('class', 'node-pill');
+  rect.setAttribute('x', -PILL_W / 2); rect.setAttribute('y', -PILL_H / 2);
+  rect.setAttribute('width', PILL_W); rect.setAttribute('height', PILL_H);
+  rect.setAttribute('rx', PILL_H / 2);
+  rect.setAttribute('fill', 'var(--bg)');
+  rect.setAttribute('stroke', color);
+  g.appendChild(rect);
+
+  const text = document.createElementNS(SVGNS, 'text');
+  text.setAttribute('class', 'node-label');
+  text.setAttribute('x', 0); text.setAttribute('y', 4);
+  text.setAttribute('text-anchor', 'middle');
+  text.setAttribute('fill', color);
+  text.textContent = preview;
+  g.appendChild(text);
+
+  svg.appendChild(g);
+});
+
+document.getElementById('graph').appendChild(svg);
+</script>
+
+</body>
+</html>
