@@ -3,7 +3,7 @@
   "displayName": "Fork Graph",
   "description": "Visualize Claude Code session fork genealogy as a git-graph. Leave memos on nodes and reopen \"that good state\" in one click.",
   "version": "0.0.1",
-  "publisher": "fork-graph-dev",
+  "publisher": "natum",
   "license": "MIT",
   "repository": {
     "type": "git",
