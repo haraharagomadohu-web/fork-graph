@@ -21,6 +21,7 @@
     "graph",
     "visualization"
   ],
+  "icon": "resources/icon.png",
   "main": "./out/extension.js",
   "activationEvents": [
     "onWebviewPanel:forkGraphPanel",
